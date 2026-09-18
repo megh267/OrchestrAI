@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="OrchestrAI turns competing tasks and limited capacity into an explainable, scenario-aware action plan.">
+<link rel="icon" type="image/png" href="/static/logo.png">
+<title>OrchestrAI — Priority Reasoning Engine</title>
+<style>
+* { margin:0;padding:0;box-sizing:border-box; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f5f5f0;color:#1a1a1a;min-height:100vh; }
+a,button,input,select { font-family:inherit; }
+.app-header { background:#fff;border-bottom:0.5px solid #e0e0d8;padding:16px 32px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10; }
+.logo { display:flex;align-items:center;gap:12px; }
+.logo-mark { width:34px;height:34px;background:#eef3ff;border-radius:8px;display:flex;align-items:center;justify-content:center; }
+.logo-name { font-size:16px;font-weight:500;letter-spacing:-0.01em; }
+.logo-sub { font-size:12px;color:#888;margin-top:1px; }
+.powered-badge { font-size:11px;color:#3b5bdb;background:#eef3ff;padding:5px 12px;border-radius:20px;border:0.5px solid #c5d2f6; }
+.domain-bar { background:#fff;border-bottom:0.5px solid #e0e0d8;padding:0 32px;display:flex;align-items:center;gap:4px;overflow-x:auto; }
+.domain-label { font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-right:8px;white-space:nowrap; }
+.domain-btn { padding:12px 16px;font-size:13px;font-weight:500;color:#888;background:none;border:none;border-bottom:2px solid transparent;cursor:pointer;transition:all 0.15s;white-space:nowrap; }
+.domain-btn:hover { color:#1a1a1a; }
+.domain-btn.active { color:#1a1a1a;border-bottom-color:#1a1a1a; }
+.domain-desc { font-size:11px;color:#bbb;margin-left:auto;padding:12px 0;white-space:nowrap; }
+.main { display:grid;grid-template-columns:420px 1fr;gap:20px;padding:24px 32px;max-width:1180px;margin:0 auto;align-items:start; }
+.left-col { display:flex;flex-direction:column;gap:16px; }
+.panel { background:#fff;border:0.5px solid #e0e0d8;border-radius:12px;overflow:hidden; }
+.panel-header { padding:14px 20px;border-bottom:0.5px solid #f0f0ea;display:flex;align-items:center;justify-content:space-between; }
+.panel-title { font-size:11px;font-weight:500;color:#888;text-transform:uppercase;letter-spacing:0.07em; }
+.panel-body { padding:20px; }
+.hours-row { display:flex;align-items:center;gap:12px;margin-bottom:18px;padding-bottom:16px;border-bottom:0.5px solid #f0f0ea; }
+.hours-label { font-size:13px;color:#555;flex:1; }
+.hours-input { width:68px;font-size:13px;padding:6px 10px;border:0.5px solid #d8d8d0;border-radius:7px;background:#fafaf8;color:#1a1a1a;text-align:center; }
+.hours-input:focus { outline:none;border-color:#3b5bdb; }
+.col-labels { display:grid;grid-template-columns:2fr 1.3fr 0.8fr 0.8fr 28px;gap:8px;margin-bottom:6px;padding:0 2px; }
+.col-label { font-size:11px;color:#aaa;letter-spacing:0.03em; }
+.field-row { display:grid;grid-template-columns:2fr 1.3fr 0.8fr 0.8fr 28px;gap:8px;align-items:center;margin-bottom:8px; }
+.field-row input,.field-row select { width:100%;font-size:13px;padding:7px 10px;border:0.5px solid #d8d8d0;border-radius:7px;background:#fafaf8;color:#1a1a1a; }
+.field-row input:focus,.field-row select:focus { outline:none;border-color:#3b5bdb;background:#fff; }
+.remove-btn { width:26px;height:26px;border-radius:50%;border:0.5px solid #e0e0d8;background:none;color:#bbb;cursor:pointer;font-size:16px;display:flex;align-items:center;justify-content:center;transition:all 0.15s; }
+.remove-btn:hover { background:#fff0f0;border-color:#ffcccc;color:#e55; }
+.add-task-btn { width:100%;padding:9px;border:0.5px dashed #d0d0c8;border-radius:8px;background:none;color:#888;font-size:13px;cursor:pointer;margin-top:4px;transition:all 0.15s; }
+.add-task-btn:hover { background:#fafaf8;color:#555; }
+.btn-row { display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px; }
+.run-btn { padding:12px;background:#1a1a1a;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;letter-spacing:0.01em;transition:opacity 0.15s; }
+.run-btn:hover { opacity:0.85; }
+.run-btn:disabled { opacity:0.4;cursor:not-allowed; }
+.scenario-btn { padding:12px;background:#fff;color:#3b5bdb;border:0.5px solid #c5d2f6;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:all 0.15s; }
+.scenario-btn:hover { background:#eef3ff; }
+.scenario-panel { background:#fff;border:0.5px solid #c5d2f6;border-radius:12px;overflow:hidden;display:none; }
+.scenario-panel.open { display:block; }
+.scenario-header { padding:14px 20px;border-bottom:0.5px solid #eef3ff;background:#f8f9ff; }
+.scenario-title { font-size:12px;font-weight:500;color:#3b5bdb; }
+.scenario-sub { font-size:11px;color:#888;margin-top:2px; }
+.scenario-body { padding:16px 20px;display:flex;flex-direction:column;gap:8px; }
+.scenario-option { padding:10px 14px;background:#f8f9ff;border:0.5px solid #e0e8ff;border-radius:8px;font-size:13px;color:#3b5bdb;cursor:pointer;transition:all 0.15s;text-align:left; }
+.scenario-option:hover { background:#eef3ff; }
+.scenario-custom { display:flex;gap:8px;margin-top:4px; }
+.scenario-custom input { flex:1;font-size:13px;padding:9px 12px;border:0.5px solid #d8d8d0;border-radius:8px;background:#fafaf8;color:#1a1a1a; }
+.scenario-custom input:focus { outline:none;border-color:#3b5bdb; }
+.scenario-custom button { padding:9px 16px;background:#3b5bdb;color:#fff;border:none;border-radius:8px;font-size:13px;cursor:pointer; }
+.live-indicator { display:flex;align-items:center;gap:6px; }
+.live-dot { width:7px;height:7px;border-radius:50%;background:#22c55e;animation:pulse 1.4s ease-in-out infinite; }
+.idle-dot { width:7px;height:7px;border-radius:50%;background:#d0d0c8; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.85)} }
+.live-label { font-size:11px;font-weight:500; }
+.live-label.running { color:#16a34a; }
+.live-label.idle { color:#aaa; }
+.agent-row { display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:0.5px solid #f5f5f0; }
+.agent-row:last-child { border-bottom:none;padding-bottom:0; }
+.agent-icon { width:30px;height:30px;border-radius:7px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px; }
+.icon-done { background:#f0fdf4; }
+.icon-active { background:#eef3ff; }
+.icon-wait { background:#f8f8f4; }
+.icon-done svg { stroke:#16a34a; }
+.icon-active svg { stroke:#3b5bdb; }
+.icon-wait svg { stroke:#ccc; }
+.agent-info { flex:1;min-width:0; }
+.agent-name { font-size:13px;font-weight:500;color:#1a1a1a;margin-bottom:2px; }
+.agent-name.waiting { color:#bbb; }
+.agent-status-text { font-size:12px;line-height:1.5; }
+.agent-status-text.done { color:#16a34a; }
+.agent-status-text.active { color:#3b5bdb; }
+.agent-status-text.waiting { color:#bbb; }
+.agent-time { font-size:11px;color:#bbb;font-variant-numeric:tabular-nums;margin-left:auto;padding-top:2px;white-space:nowrap; }
+.agent-tags { display:flex;flex-wrap:wrap;gap:4px;margin-top:6px; }
+.atag { font-size:10px;padding:2px 7px;border-radius:4px;font-family:monospace; }
+.atag-blue { background:#eef3ff;color:#3b5bdb; }
+.atag-red { background:#fff0ee;color:#c0392b; }
+.atag-amber { background:#fff8ee;color:#b7660d; }
+.atag-green { background:#f0fdf4;color:#16a34a; }
+.atag-gray { background:#f4f4f0;color:#666; }
+.progress-bar-wrap { height:3px;background:#f0f0ea;border-radius:2px;margin-top:8px; }
+.progress-bar { height:3px;border-radius:2px;background:#3b5bdb;animation:prog 1.8s ease-in-out infinite alternate; }
+@keyframes prog { from{width:40%} to{width:78%} }
+.session-row { display:flex;gap:8px;margin-top:14px;padding-top:14px;border-top:0.5px solid #f0f0ea;flex-wrap:wrap; }
+.session-pill { font-size:11px;color:#888;background:#f4f4f0;border-radius:6px;padding:4px 10px; }
+.session-pill span { color:#1a1a1a;font-weight:500; }
+.output-area { display:flex;flex-direction:column;gap:16px; }
+.empty-state { text-align:center;padding:56px 24px;color:#aaa;font-size:13px;line-height:1.8;background:#fff;border:0.5px solid #e0e0d8;border-radius:12px; }
+.empty-title { font-size:14px;font-weight:500;color:#888;margin-bottom:6px; }
+.loading-state { display:none;text-align:center;padding:56px 24px;background:#fff;border:0.5px solid #e0e0d8;border-radius:12px; }
+.spinner { width:28px;height:28px;border:2px solid #e8e8e4;border-top-color:#1a1a1a;border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 14px; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.loading-text { font-size:13px;color:#555;font-weight:500; }
+.loading-sub { font-size:12px;color:#aaa;margin-top:4px; }
+.error-banner { display:none;background:#fff5f5;border:0.5px solid #fecaca;border-radius:12px;padding:16px 18px;color:#991b1b;font-size:13px;line-height:1.55; }
+.error-banner.visible { display:block; }
+button:focus-visible,input:focus-visible,select:focus-visible { outline:2px solid #3b5bdb;outline-offset:2px; }
+.overload-banner { background:#fff8ee;border:0.5px solid #ffd58a;border-radius:10px;padding:14px 16px; }
+.overload-title { font-size:13px;font-weight:500;color:#b7660d;margin-bottom:4px; }
+.overload-msg { font-size:12px;color:#888;line-height:1.6; }
+.defer-tags { display:flex;flex-wrap:wrap;gap:6px;margin-top:8px; }
+.defer-tag { font-size:11px;background:#fff0d4;color:#b7660d;border-radius:6px;padding:3px 10px;border:0.5px solid #ffd58a; }
+.learning-banner { background:#f0fdf4;border:0.5px solid #bbf7d0;border-radius:10px;padding:14px 16px; }
+.learning-title { font-size:13px;font-weight:500;color:#16a34a;margin-bottom:4px; }
+.learning-msg { font-size:12px;color:#555;line-height:1.6; }
+.scenario-result-banner { background:#eef3ff;border:0.5px solid #c5d2f6;border-radius:10px;padding:14px 16px; }
+.scenario-result-title { font-size:13px;font-weight:500;color:#3b5bdb;margin-bottom:4px; }
+.scenario-result-msg { font-size:12px;color:#555;line-height:1.6; }
+.stat-row { display:grid;grid-template-columns:repeat(3,1fr);gap:10px; }
+.stat { background:#f8f8f4;border-radius:8px;padding:14px 16px; }
+.stat-label { font-size:11px;color:#888;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em; }
+.stat-val { font-size:22px;font-weight:500; }
+.stat-val.overloaded { color:#b7660d; }
+.rank-item { padding:14px 0;border-bottom:0.5px solid #f0f0ea;display:flex;gap:14px;align-items:flex-start; }
+.rank-item:last-child { border-bottom:none;padding-bottom:0; }
+.rank-num { font-size:12px;font-weight:500;color:#bbb;min-width:22px;padding-top:2px;font-variant-numeric:tabular-nums; }
+.rank-content { flex:1;min-width:0; }
+.rank-title-row { display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:4px; }
+.rank-title { font-size:14px;font-weight:500; }
+.rank-reason { font-size:12px;color:#666;line-height:1.55; }
+.score-pill { font-size:11px;color:#888;background:#f4f4f0;border:0.5px solid #e0e0d8;border-radius:20px;padding:2px 8px; }
+.cat-pill { font-size:11px;border-radius:20px;padding:2px 8px;font-weight:500; }
+.urgent_academic,.critical_patient,.urgent_case,.critical_bug { background:#fff0ee;color:#c0392b; }
+.urgent_external,.high_priority_feature { background:#fff8ee;color:#b7660d; }
+.strategic_no_deadline,.elective_care,.strategic_filing,.technical_debt { background:#eef3ff;color:#3b5bdb; }
+.optional_low_priority,.routine_admin { background:#f4f4f0;color:#888; }
+.plan-row { display:flex;gap:16px;padding:10px 0;border-bottom:0.5px solid #f0f0ea;font-size:13px;align-items:baseline; }
+.plan-row:last-child { border-bottom:none;padding-bottom:0; }
+.plan-day { color:#888;min-width:56px; }
+.plan-tasks { color:#1a1a1a;line-height:1.5; }
+.explanation-text { font-size:13px;color:#555;line-height:1.75;border-left:2px solid #e8e8e0;padding-left:14px; }
+.results-hidden { display:none; }
+.section-label { font-size:11px;color:#aaa;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px; }
+.divider { height:0.5px;background:#f0f0ea;margin:16px 0; }
+.readiness-wrap { display:flex;align-items:center;gap:16px;margin-bottom:10px; }
+.readiness-circle { position:relative;width:80px;height:80px;flex-shrink:0; }
+.readiness-center { position:absolute;top:50%;left:50%;transform:translate(-50%,-35%);text-align:center; }
+.readiness-val { font-size:18px;font-weight:500;color:#1a1a1a; }
+.readiness-sub { font-size:10px;color:#888; }
+.readiness-info { flex:1; }
+.readiness-title { font-size:14px;font-weight:500;color:#1a1a1a;margin-bottom:4px; }
+.readiness-desc { font-size:12px;color:#888;line-height:1.55; }
+.cat-pills { display:flex;flex-wrap:wrap;gap:6px; }
+.cpill { font-size:11px;border-radius:20px;padding:3px 10px;font-weight:500; }
+.cpill-red { background:#fff0ee;color:#c0392b; }
+.cpill-amber { background:#fff8ee;color:#b7660d; }
+.cpill-blue { background:#eef3ff;color:#3b5bdb; }
+.cpill-gray { background:#f4f4f0;color:#888; }
+.score-row { display:flex;align-items:center;gap:10px;margin-bottom:10px; }
+.score-row:last-child { margin-bottom:0; }
+.score-rank { font-size:11px;color:#bbb;min-width:18px;font-variant-numeric:tabular-nums; }
+.score-name { font-size:12px;color:#555;min-width:110px;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.bar-wrap { flex:1;height:5px;background:#f0f0ea;border-radius:3px;overflow:hidden; }
+.bar-fill { height:5px;border-radius:3px; }
+.score-num { font-size:12px;font-weight:500;min-width:22px;text-align:right; }
+.risk-row { display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:0.5px solid #f5f5f0;font-size:12px; }
+.risk-row:last-child { border-bottom:none; }
+.risk-label { color:#555; }
+.compare-col-header { font-size:12px;font-weight:500;color:#888;margin-bottom:12px;display:flex;align-items:center;gap:8px; }
+.compare-badge-gray { background:#f4f4f0;border:0.5px solid #e0e0d8;border-radius:6px;padding:3px 10px;color:#888;font-size:12px; }
+.compare-badge-blue { background:#eef3ff;border:0.5px solid #c5d2f6;border-radius:6px;padding:3px 10px;color:#3b5bdb;font-size:12px; }
+.compare-item { display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:0.5px solid #f5f5f0; }
+.compare-item:last-child { border-bottom:none; }
+.compare-num-gray { font-size:12px;color:#bbb;min-width:20px;font-variant-numeric:tabular-nums; }
+.compare-num-blue { font-size:12px;color:#3b5bdb;min-width:20px;font-variant-numeric:tabular-nums; }
+.compare-info { flex:1;min-width:0; }
+.compare-title-gray { font-size:13px;color:#888; }
+.compare-title-blue { font-size:13px;font-weight:500;color:#1a1a1a; }
+.compare-sub { font-size:11px;color:#bbb;margin-top:2px; }
+.compare-tag-gray { font-size:11px;color:#bbb;background:#f8f8f4;border-radius:4px;padding:2px 7px; }
+.compare-tag-blue { font-size:11px;color:#3b5bdb;background:#eef3ff;border-radius:4px;padding:2px 7px; }
+.verdict-red { margin-top:14px;padding:10px 12px;background:#fff8f8;border-radius:8px;border:0.5px solid #ffe0e0; }
+.verdict-red-title { font-size:11px;color:#c0392b;font-weight:500;margin-bottom:4px; }
+.verdict-red-body { font-size:11px;color:#888;line-height:1.7; }
+.verdict-green { margin-top:14px;padding:10px 12px;background:#f0fdf4;border-radius:8px;border:0.5px solid #bbf7d0; }
+.verdict-green-title { font-size:11px;color:#16a34a;font-weight:500;margin-bottom:4px; }
+.verdict-green-body { font-size:11px;color:#888;line-height:1.7; }
+.chart-tabs { display:flex;gap:4px;margin-bottom:16px; }
+.chart-tab { padding:6px 14px;font-size:12px;font-weight:500;color:#888;background:#f4f4f0;border:none;border-radius:6px;cursor:pointer;transition:all 0.15s; }
+.chart-tab.active { background:#1a1a1a;color:#fff; }
+.chart-pane { display:none; }
+.chart-pane.active { display:block; }
+@media(max-width:860px) { .main{grid-template-columns:1fr;} .app-header,.main{padding:16px 20px;} .domain-bar{padding:0 20px;} }
+@media(max-width:620px) { .powered-badge,.domain-desc,.col-labels{display:none;} .app-header{padding:14px 16px;} .domain-bar{padding:0 12px;} .main{padding:16px 12px;} .field-row{grid-template-columns:1fr 1fr 28px;} .field-row .task-title{grid-column:1 / 3;} .stat-row{grid-template-columns:1fr;} .btn-row{grid-template-columns:1fr;} }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="logo">
+    <div class="logo-mark">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <path d="M9 2L15.5 5.75V12.25L9 16L2.5 12.25V5.75L9 2Z" stroke="#3b5bdb" stroke-width="1.25" stroke-linejoin="round"/>
+        <path d="M9 6.5V11.5M6.5 9H11.5" stroke="#3b5bdb" stroke-width="1.25" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="logo-name">OrchestrAI</div>
+      <div class="logo-sub">Priority Reasoning Engine</div>
+    </div>
+  </div>
+  <div class="powered-badge">Powered by Gemini on Google Cloud</div>
+</header>
+
+<div class="domain-bar">
+  <span class="domain-label">Domain</span>
+  <button class="domain-btn active" onclick="switchDomain('student')" id="btn-student">Student</button>
+  <button class="domain-btn" onclick="switchDomain('hospital')" id="btn-hospital">Hospital</button>
+  <button class="domain-btn" onclick="switchDomain('legal')" id="btn-legal">Law Firm</button>
+  <button class="domain-btn" onclick="switchDomain('software')" id="btn-software">Software Team</button>
+  <span class="domain-desc" id="domain-desc">University assignments, certifications, competitions</span>
+</div>
+
+<div class="main">
+  <div class="left-col">
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Task Input</span>
+        <span style="font-size:11px;color:#aaa;" id="domain-tag">Student</span>
+      </div>
+      <div class="panel-body">
+        <div class="hours-row">
+          <span class="hours-label" id="hours-label">Available hours this week</span>
+          <input type="number" class="hours-input" id="available-hours" value="12" min="1" max="100">
+        </div>
+        <div class="col-labels">
+          <span class="col-label">Task</span>
+          <span class="col-label">Type</span>
+          <span class="col-label">Due</span>
+          <span class="col-label">Effort (hrs)</span>
+          <span></span>
+        </div>
+        <div id="task-list"></div>
+        <button class="add-task-btn" onclick="addTask()">+ Add task</button>
+        <div class="btn-row">
+          <button class="run-btn" id="run-btn" onclick="runEngine(null)">Run Priority Engine</button>
+          <button class="scenario-btn" onclick="toggleScenario()">Simulate Scenarios</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="scenario-panel" id="scenario-panel">
+      <div class="scenario-header">
+        <div class="scenario-title">Scenario Simulator</div>
+        <div class="scenario-sub">Ask the engine to reason about a specific what-if</div>
+      </div>
+      <div class="scenario-body">
+        <button class="scenario-option" onclick="runScenario('What if I only have 6 hours this week instead?')">What if I only have 6 hours?</button>
+        <button class="scenario-option" onclick="runScenario('What if I delay the lowest priority task by one week?')">What if I delay the lowest priority task?</button>
+        <button class="scenario-option" onclick="runScenario('What if I prioritise the certification or strategic task above everything else?')">What if I prioritise the strategic task?</button>
+        <button class="scenario-option" onclick="runScenario('What if a new urgent task appears tomorrow with 4 hours of effort?')">What if a new urgent task appears?</button>
+        <button class="scenario-option" onclick="runScenario('What is the minimum set of tasks I must complete this week to avoid serious risk?')">What is the minimum I must complete?</button>
+        <div class="scenario-custom">
+          <input type="text" id="custom-scenario" placeholder="Ask your own what-if...">
+          <button onclick="runCustomScenario()">Ask</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="analytics-panel" style="display:none;">
+      <div class="panel-header"><span class="panel-title">Workload Analytics</span></div>
+      <div class="panel-body">
+        <div class="section-label">Plan readiness</div>
+        <div class="readiness-wrap">
+          <div class="readiness-circle">
+            <canvas id="readiness-chart" width="80" height="80"></canvas>
+            <div class="readiness-center">
+              <div class="readiness-val" id="readiness-val">—</div>
+              <div class="readiness-sub">/100</div>
+            </div>
+          </div>
+          <div class="readiness-info">
+            <div class="readiness-title" id="readiness-title">—</div>
+            <div class="readiness-desc" id="readiness-desc">Run the engine to see your plan readiness score.</div>
+          </div>
+        </div>
+        <div class="cat-pills" id="cat-pills" style="margin-bottom:4px;"></div>
+        <div class="divider"></div>
+        <div class="section-label">Priority scores</div>
+        <div id="priority-bars"></div>
+        <div class="divider"></div>
+        <div class="section-label">Risk summary</div>
+        <div id="risk-summary"></div>
+        <div class="divider"></div>
+        <div class="section-label">Deep analytics</div>
+        <div class="chart-tabs">
+          <button class="chart-tab active" onclick="showTab('scatter')">Urgency vs Effort</button>
+          <button class="chart-tab" onclick="showTab('capacity')">Weekly Capacity</button>
+          <button class="chart-tab" onclick="showTab('radar')">Score Breakdown</button>
+        </div>
+        <div class="chart-pane active" id="pane-scatter">
+          <div style="position:relative;width:100%;height:220px;"><canvas id="scatter-chart"></canvas></div>
+          <div style="font-size:11px;color:#aaa;margin-top:8px;text-align:center;">Each dot is a task — position shows urgency score vs effort hours</div>
+        </div>
+        <div class="chart-pane" id="pane-capacity">
+          <div style="position:relative;width:100%;height:220px;"><canvas id="capacity-chart"></canvas></div>
+          <div style="font-size:11px;color:#aaa;margin-top:8px;text-align:center;">Hours allocated per day across your action plan</div>
+        </div>
+        <div class="chart-pane" id="pane-radar">
+          <div style="position:relative;width:100%;height:260px;"><canvas id="radar-chart"></canvas></div>
+          <div style="font-size:11px;color:#aaa;margin-top:8px;text-align:center;">How each task scores across all 6 reasoning dimensions</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-header">
+        <span class="panel-title">Agent Pipeline</span>
+        <div class="live-indicator">
+          <div class="idle-dot" id="live-dot"></div>
+          <span class="live-label idle" id="live-label">Idle</span>
+        </div>
+      </div>
+      <div class="panel-body">
+        <div id="agent-list">
+          <div class="agent-row" id="agent-0"><div class="agent-icon icon-wait"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#ccc"><path d="M3 8l3.5 3.5L13 4.5"/></svg></div><div class="agent-info"><div class="agent-name waiting">Ingestion Agent</div><div class="agent-status-text waiting">Waiting — will parse tasks and extract metadata</div></div><div class="agent-time" id="time-0">—</div></div>
+          <div class="agent-row" id="agent-1"><div class="agent-icon icon-wait"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#ccc"><path d="M2 4h12M2 8h8M2 12h5"/></svg></div><div class="agent-info"><div class="agent-name waiting">Classification Agent</div><div class="agent-status-text waiting">Waiting — will label tasks by urgency and type</div></div><div class="agent-time" id="time-1">—</div></div>
+          <div class="agent-row" id="agent-2"><div class="agent-icon icon-wait"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#ccc"><circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2 1.5"/></svg></div><div class="agent-info"><div class="agent-name waiting">Scoring Agent</div><div class="agent-status-text waiting">Waiting — will score across 6 dimensions</div></div><div class="agent-time" id="time-2">—</div></div>
+          <div class="agent-row" id="agent-3"><div class="agent-icon icon-wait"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#ccc"><rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h6M5 11h3"/></svg></div><div class="agent-info"><div class="agent-name waiting">Schedule Agent</div><div class="agent-status-text waiting">Waiting — will build action plan</div></div><div class="agent-time" id="time-3">—</div></div>
+          <div class="agent-row" id="agent-4"><div class="agent-icon icon-wait"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="#ccc"><path d="M4 6h8M4 9h6M4 12h4"/><rect x="2" y="2" width="12" height="12" rx="3"/></svg></div><div class="agent-info"><div class="agent-name waiting">Explanation Agent</div><div class="agent-status-text waiting">Waiting — will generate reasoning summary</div></div><div class="agent-time" id="time-4">—</div></div>
+        </div>
+        <div class="session-row" id="session-row" style="display:none">
+          <div class="session-pill">Session <span id="sess-id">—</span></div>
+          <div class="session-pill">Model <span id="session-model">—</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="output-area">
+    <div class="error-banner" id="error-banner" role="alert" aria-live="assertive"></div>
+    <div class="empty-state" id="empty-state">
+      <div class="empty-title">No analysis yet</div>
+      Select a domain, enter your tasks, and run the engine to generate a prioritised action plan.
+    </div>
+    <div class="loading-state" id="loading-state" role="status" aria-live="polite">
+      <div class="spinner"></div>
+      <div class="loading-text" id="loading-text">Agents are reasoning about your workload</div>
+      <div class="loading-sub" id="loading-sub">Watch the pipeline on the left as each agent completes.</div>
+    </div>
+    <div id="results" class="results-hidden">
+      <div id="scenario-result-area"></div>
+      <div id="overload-area"></div>
+      <div class="stat-row" id="stat-row"></div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header"><span class="panel-title">Ranked Priorities</span></div>
+        <div class="panel-body" id="ranked-list"></div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header"><span class="panel-title">Action Plan</span></div>
+        <div class="panel-body" id="action-plan"></div>
+      </div>
+      <div class="panel" style="margin-top:16px">
+        <div class="panel-header"><span class="panel-title">Engine Reasoning</span></div>
+        <div class="panel-body"><div class="explanation-text" id="explanation"></div></div>
+      </div>
+      <div id="learning-area"></div>
+      <div id="compare-area"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script>
+const DOMAINS = {
+  student:{label:"Student",desc:"University assignments, certifications, competitions",hoursLabel:"Available study hours this week",types:["Course assignment","Competition","Certification","Exam","Personal project","Career task","Study goal"],tasks:[{title:"ML quiz",type:"Course assignment",due:"Tomorrow",effort:"2"},{title:"Database assignment",type:"Course assignment",due:"2 days",effort:"5"},{title:"Hackathon prototype",type:"Competition",due:"6 days",effort:"10"},{title:"Google Cloud certification",type:"Certification",due:"No deadline",effort:"20"}]},
+  hospital:{label:"Hospital",desc:"Patient care, surgical schedules, compliance and admin",hoursLabel:"Available staff hours this shift",types:["Critical care","Surgical procedure","Routine checkup","Admin & compliance","Patient follow-up","Emergency","Elective procedure"],tasks:[{title:"Emergency appendectomy",type:"Emergency",due:"Immediate",effort:"3"},{title:"ICU patient review",type:"Critical care",due:"2 hours",effort:"1"},{title:"Elective knee surgery",type:"Elective procedure",due:"3 days",effort:"4"},{title:"CQC compliance audit",type:"Admin & compliance",due:"No deadline",effort:"8"}]},
+  legal:{label:"Law Firm",desc:"Court deadlines, client cases, filings and research",hoursLabel:"Available billable hours this week",types:["Court deadline","Client filing","Legal research","Contract review","Compliance","Client meeting","Administrative"],tasks:[{title:"Court submission — Smith v Jones",type:"Court deadline",due:"Tomorrow",effort:"6"},{title:"Contract review — Acme Corp",type:"Contract review",due:"3 days",effort:"4"},{title:"GDPR compliance audit",type:"Compliance",due:"No deadline",effort:"10"},{title:"New client onboarding",type:"Administrative",due:"No deadline",effort:"2"}]},
+  software:{label:"Software Team",desc:"Sprint tickets, bugs, technical debt and features",hoursLabel:"Available engineering hours this sprint",types:["Critical bug","Feature","Technical debt","Security patch","Documentation","Code review","Infrastructure"],tasks:[{title:"Production login bug",type:"Critical bug",due:"Today",effort:"3"},{title:"Payment API integration",type:"Feature",due:"End of sprint",effort:"8"},{title:"Database query optimisation",type:"Technical debt",due:"No deadline",effort:"5"},{title:"SSL certificate renewal",type:"Security patch",due:"No deadline",effort:"1"}]}
+};
+
+let currentDomain='student', scenarioOpen=false;
+let scatterChart=null, capacityChart=null, radarChart=null, readinessChart=null;
+
+function escapeHTML(value){
+  return String(value??'').replace(/[&<>'"]/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[ch]));
+}
+function safeCategory(value){return Object.prototype.hasOwnProperty.call(CAT_COLORS,value)?value:'optional_low_priority';}
+function showError(message){
+  const banner=document.getElementById('error-banner');
+  banner.textContent=message;
+  banner.classList.add('visible');
+}
+function clearError(){const banner=document.getElementById('error-banner');banner.textContent='';banner.classList.remove('visible');}
+
+const AGENT_ICONS=['<path d="M3 8l3.5 3.5L13 4.5"/>','<path d="M2 4h12M2 8h8M2 12h5"/>','<circle cx="8" cy="8" r="5.5"/><path d="M8 5v3.5l2 1.5"/>','<rect x="2" y="2" width="12" height="12" rx="2"/><path d="M5 8h6M5 5h6M5 11h3"/>','<path d="M4 6h8M4 9h6M4 12h4"/><rect x="2" y="2" width="12" height="12" rx="3"/>'];
+
+const CAT_COLORS={urgent_academic:'#c0392b',urgent_external:'#b7660d',strategic_no_deadline:'#3b5bdb',optional_low_priority:'#aaa',critical_patient:'#c0392b',elective_care:'#3b5bdb',urgent_case:'#c0392b',strategic_filing:'#3b5bdb',critical_bug:'#c0392b',high_priority_feature:'#b7660d',technical_debt:'#3b5bdb',routine_admin:'#aaa'};
+
+function iconSVG(p,c){return `<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" stroke="${c}">${p}</svg>`;}
+function toggleScenario(){scenarioOpen=!scenarioOpen;document.getElementById('scenario-panel').classList.toggle('open',scenarioOpen);}
+function runScenario(text){runEngine(text);scenarioOpen=false;document.getElementById('scenario-panel').classList.remove('open');}
+function runCustomScenario(){const v=document.getElementById('custom-scenario').value.trim();if(v)runScenario(v);}
+function showTab(name){document.querySelectorAll('.chart-tab').forEach((t,i)=>{const names=['scatter','capacity','radar'];t.classList.toggle('active',names[i]===name);});document.querySelectorAll('.chart-pane').forEach(p=>{p.classList.toggle('active',p.id==='pane-'+name);});}
+
+function switchDomain(domain){
+  currentDomain=domain;
+  document.querySelectorAll('.domain-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('btn-'+domain).classList.add('active');
+  const d=DOMAINS[domain];
+  document.getElementById('domain-desc').textContent=d.desc;
+  document.getElementById('domain-tag').textContent=d.label;
+  document.getElementById('hours-label').textContent=d.hoursLabel;
+  document.getElementById('task-list').innerHTML='';
+  d.tasks.forEach(t=>addTask(t.title,t.type,t.due,t.effort));
+  document.getElementById('empty-state').style.display='block';
+  document.getElementById('results').className='results-hidden';
+  document.getElementById('analytics-panel').style.display='none';
+  resetAgents();
+}
+
+function setAgentState(idx,state,statusText,tags,time){
+  const row=document.getElementById('agent-'+idx);
+  const timeEl=document.getElementById('time-'+idx);
+  const iconEl=row.querySelector('.agent-icon');
+  const nameEl=row.querySelector('.agent-name');
+  const statusEl=row.querySelector('.agent-status-text');
+  row.querySelectorAll('.agent-tags,.progress-bar-wrap').forEach(e=>e.remove());
+  if(state==='done'){iconEl.className='agent-icon icon-done';iconEl.innerHTML=iconSVG(AGENT_ICONS[idx],'#16a34a');nameEl.className='agent-name';statusEl.className='agent-status-text done';statusEl.textContent=statusText;if(time!==undefined)timeEl.textContent=time+'s';}
+  else if(state==='active'){iconEl.className='agent-icon icon-active';iconEl.innerHTML=iconSVG(AGENT_ICONS[idx],'#3b5bdb');nameEl.className='agent-name';statusEl.className='agent-status-text active';statusEl.textContent=statusText;const pb=document.createElement('div');pb.className='progress-bar-wrap';pb.innerHTML='<div class="progress-bar"></div>';statusEl.after(pb);timeEl.textContent='—';}
+  else{iconEl.className='agent-icon icon-wait';iconEl.innerHTML=iconSVG(AGENT_ICONS[idx],'#ccc');nameEl.className='agent-name waiting';statusEl.className='agent-status-text waiting';statusEl.textContent=statusText;timeEl.textContent='—';}
+  if(tags&&tags.length){const td=document.createElement('div');td.className='agent-tags';tags.forEach(t=>{const sp=document.createElement('span');sp.className='atag '+(t.color||'atag-gray');sp.textContent=t.label;td.appendChild(sp);});statusEl.after(td);}
+}
+
+function setLive(r){const dot=document.getElementById('live-dot'),label=document.getElementById('live-label');if(r){dot.className='live-dot';label.className='live-label running';label.textContent='Running';}else{dot.className='idle-dot';label.className='live-label idle';label.textContent='Idle';}}
+
+function resetAgents(){
+  ['Waiting — will parse tasks and extract metadata','Waiting — will label tasks by urgency and type','Waiting — will score across 6 dimensions','Waiting — will build action plan','Waiting — will generate reasoning summary'].forEach((t,i)=>setAgentState(i,'wait',t));
+  document.getElementById('session-row').style.display='none';setLive(false);
+}
+
+function animateAgents(agentsLog,sessionId,model){
+  let delay=0;
+  const activeLabels=['Parsing task list...','Classifying by urgency...','Scoring across 6 dimensions...','Building action plan...','Generating reasoning summary...'];
+  const doneLabels=[`${(agentsLog[0].output||[]).length} tasks parsed`,'Tasks labelled','Scores calculated','Schedule generated','Reasoning complete'];
+  agentsLog.forEach((agent,i)=>{
+    setTimeout(()=>setAgentState(i,'active',activeLabels[i]),delay);delay+=600;
+    setTimeout(()=>{
+      let tags=[];
+      if(i===0&&agent.output)tags=agent.output.map(t=>({label:t,color:'atag-blue'}));
+      else if(i===1&&agent.output){const cm={urgent_academic:'atag-red',urgent_external:'atag-amber',strategic_no_deadline:'atag-blue',optional_low_priority:'atag-gray',critical_patient:'atag-red',elective_care:'atag-blue',urgent_case:'atag-red',strategic_filing:'atag-blue',critical_bug:'atag-red',high_priority_feature:'atag-amber',technical_debt:'atag-blue',routine_admin:'atag-gray'};const counts={};agent.output.forEach(c=>{counts[c.category]=(counts[c.category]||0)+1;});tags=Object.entries(counts).map(([cat,n])=>({label:cat.replace(/_/g,' ')+' x'+n,color:cm[cat]||'atag-gray'}));}
+      else if(i===2&&agent.output)tags=agent.output.map(d=>({label:d,color:'atag-green'}));
+      else if(i===3&&agent.output)tags=agent.output.map(d=>({label:d,color:'atag-gray'}));
+      setAgentState(i,'done',doneLabels[i],tags,agent.time);
+      if(i===agentsLog.length-1){document.getElementById('sess-id').textContent=sessionId;document.getElementById('session-model').textContent=model||'Gemini';document.getElementById('session-row').style.display='flex';setLive(false);}
+    },delay);delay+=700;
+  });
+}
+
+function createTaskRow(title='',type='',due='',effort=''){
+  const types=DOMAINS[currentDomain].types;
+  const row=document.createElement('div');row.className='field-row';
+  row.innerHTML=`<input type="text" aria-label="Task name" maxlength="120" placeholder="Task name" class="task-title" value="${escapeHTML(title)}"><select aria-label="Task type" class="task-type">${types.map(t=>`<option${t===type?' selected':''}>${escapeHTML(t)}</option>`).join('')}</select><input type="text" aria-label="Due date" maxlength="80" placeholder="e.g. 2 days" class="task-due" value="${escapeHTML(due)}"><input type="number" aria-label="Estimated effort in hours" placeholder="hrs" class="task-effort" min="0.5" max="168" step="0.5" value="${escapeHTML(effort)}"><button class="remove-btn" aria-label="Remove task" onclick="this.closest('.field-row').remove()">×</button>`;
+  return row;
+}
+function addTask(title='',type='',due='',effort=''){document.getElementById('task-list').appendChild(createTaskRow(title,type,due,effort));}
+
+async function runEngine(scenario){
+  clearError();
+  const rows=document.querySelectorAll('.field-row');
+  const tasks=[];
+  rows.forEach(row=>{const title=row.querySelector('.task-title').value.trim();if(!title)return;tasks.push({title,type:row.querySelector('.task-type').value,due_in_days:row.querySelector('.task-due').value||'no deadline',effort_hours:parseFloat(row.querySelector('.task-effort').value)||1});});
+  if(!tasks.length){showError('Please add at least one task.');return;}
+  const hours=document.getElementById('available-hours').value;
+  document.getElementById('empty-state').style.display='none';
+  document.getElementById('loading-state').style.display='block';
+  document.getElementById('results').className='results-hidden';
+  document.getElementById('analytics-panel').style.display='none';
+  document.getElementById('run-btn').disabled=true;
+  if(scenario){document.getElementById('loading-text').textContent='Engine is simulating your scenario';document.getElementById('loading-sub').textContent='"'+scenario.substring(0,60)+'..."';}
+  else{document.getElementById('loading-text').textContent='Agents are reasoning about your workload';document.getElementById('loading-sub').textContent='Watch the pipeline on the left as each agent completes.';}
+  resetAgents();setLive(true);
+  try{
+    const res=await fetch('/prioritise',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tasks,available_hours:hours,domain:currentDomain,scenario})});
+    const data=await res.json().catch(()=>({error:'The server returned an unreadable response.'}));
+    if(!res.ok)throw new Error(data.error||`Request failed with status ${res.status}.`);
+    document.getElementById('loading-state').style.display='none';
+    renderResults(data,tasks,hours,scenario);
+    renderAnalytics(data,tasks);
+    animateAgents(data.agents_log,data.session_id,data.model);
+  }catch(e){showError(e.message||'The engine could not complete the analysis. Please try again.');document.getElementById('empty-state').style.display='block';document.getElementById('loading-state').style.display='none';setLive(false);}
+  document.getElementById('run-btn').disabled=false;
+}
+
+function renderAnalytics(data,tasks){
+  document.getElementById('analytics-panel').style.display='block';
+
+  // Readiness
+  const rs=data.readiness_score||70;
+  document.getElementById('readiness-val').textContent=rs;
+  document.getElementById('readiness-title').textContent=data.readiness_label||'';
+  document.getElementById('readiness-desc').textContent=data.readiness_desc||'';
+  if(readinessChart)readinessChart.destroy();
+  readinessChart=new Chart(document.getElementById('readiness-chart'),{type:'doughnut',data:{datasets:[{data:[rs,100-rs],backgroundColor:['#1a1a1a','#f0f0ea'],borderWidth:0}]},options:{responsive:false,cutout:'75%',rotation:-90,circumference:180,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+
+  // Cat pills
+  const counts={};
+  (data.ranked_tasks||[]).forEach(t=>{counts[t.category]=(counts[t.category]||0)+1;});
+  const pillColors={urgent_academic:'cpill-red',urgent_external:'cpill-amber',strategic_no_deadline:'cpill-blue',optional_low_priority:'cpill-gray',critical_patient:'cpill-red',elective_care:'cpill-blue',urgent_case:'cpill-red',strategic_filing:'cpill-blue',critical_bug:'cpill-red',high_priority_feature:'cpill-amber',technical_debt:'cpill-blue',routine_admin:'cpill-gray'};
+  document.getElementById('cat-pills').innerHTML=Object.entries(counts).map(([cat,n])=>`<span class="cpill ${pillColors[cat]||'cpill-gray'}">${Number(n)} ${escapeHTML(cat.replace(/_/g,' '))}</span>`).join('');
+
+  // Priority bars
+  const bars=document.getElementById('priority-bars');
+  bars.innerHTML='';
+  (data.ranked_tasks||[]).forEach((t,i)=>{
+    const color=CAT_COLORS[t.category]||'#aaa';
+    const div=document.createElement('div');div.className='score-row';
+    const score=Math.max(0,Math.min(100,Number(t.score)||0));
+    div.innerHTML=`<span class="score-rank">${String(i+1).padStart(2,'0')}</span><span class="score-name" title="${escapeHTML(t.title)}">${escapeHTML(t.title)}</span><div class="bar-wrap"><div class="bar-fill" style="width:${score}%;background:${color};"></div></div><span class="score-num" style="color:${color};">${score}</span>`;
+    bars.appendChild(div);
+  });
+
+  // Risk summary
+  const rs2=document.getElementById('risk-summary');
+  rs2.innerHTML=(data.risk_summary||[]).map(r=>{const c=r.color==='red'?'#c0392b':r.color==='amber'?'#b7660d':r.color==='green'?'#16a34a':'#888';return `<div class="risk-row"><span class="risk-label">${escapeHTML(r.label)}</span><span class="risk-val" style="color:${c};">${escapeHTML(r.value)}</span></div>`;}).join('');
+
+  // Scatter chart
+  if(scatterChart)scatterChart.destroy();
+  const scatterData=(data.scatter_data||[]).map(t=>({x:t.effort,y:t.urgency,label:t.title,color:CAT_COLORS[t.category]||'#aaa'}));
+  scatterChart=new Chart(document.getElementById('scatter-chart'),{type:'scatter',data:{datasets:[{data:scatterData.map(d=>({x:d.x,y:d.y})),backgroundColor:scatterData.map(d=>d.color),pointRadius:10,pointHoverRadius:12}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:function(ctx){return scatterData[ctx.dataIndex]?.label||'';}}}},scales:{x:{title:{display:true,text:'Effort (hours)',font:{size:11},color:'#aaa'},grid:{color:'#f0f0ea'},ticks:{color:'#aaa',font:{size:11}}},y:{title:{display:true,text:'Urgency score',font:{size:11},color:'#aaa'},min:0,max:100,grid:{color:'#f0f0ea'},ticks:{color:'#aaa',font:{size:11}}}}}});
+
+  // Capacity chart
+  if(capacityChart)capacityChart.destroy();
+  const capData=data.capacity_data||data.action_plan||[];
+  capacityChart=new Chart(document.getElementById('capacity-chart'),{type:'bar',data:{labels:capData.map(d=>d.day),datasets:[{data:capData.map(d=>d.hours||2),backgroundColor:'#3b5bdb',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>`${ctx.raw}h allocated`}}},scales:{x:{grid:{display:false},ticks:{color:'#aaa',font:{size:11}}},y:{title:{display:true,text:'Hours',font:{size:11},color:'#aaa'},grid:{color:'#f0f0ea'},ticks:{color:'#aaa',font:{size:11}}}}}});
+
+  // Radar chart
+  if(radarChart)radarChart.destroy();
+  const dims=data.scoring_dimensions||['urgency','effort','importance','strategic value','flexibility','workload fit'];
+  const radarColors=['#c0392b','#b7660d','#3b5bdb','#16a34a','#888','#9b59b6'];
+  const radarDatasets=(data.radar_data||[]).map((t,i)=>({label:t.title,data:t.scores,borderColor:radarColors[i%radarColors.length],backgroundColor:radarColors[i%radarColors.length]+'20',borderWidth:1.5,pointRadius:3}));
+  radarChart=new Chart(document.getElementById('radar-chart'),{type:'radar',data:{labels:dims,datasets:radarDatasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:true,position:'bottom',labels:{font:{size:10},color:'#888',boxWidth:10,padding:10}}},scales:{r:{min:0,max:100,ticks:{display:false},grid:{color:'#f0f0ea'},pointLabels:{color:'#888',font:{size:10}}}}}});
+}
+
+function renderResults(data,tasks,hours,scenario){
+  const totalEffort=tasks.reduce((s,t)=>s+t.effort_hours,0);
+  const sra=document.getElementById('scenario-result-area');
+  if(scenario&&data.scenario_impact){sra.innerHTML=`<div class="scenario-result-banner" style="margin-bottom:16px"><div class="scenario-result-title">Scenario: “${escapeHTML(scenario)}”</div><div class="scenario-result-msg">${escapeHTML(data.scenario_impact)}</div></div>`;}
+  else sra.innerHTML='';
+  const oa=document.getElementById('overload-area');
+  if(data.overload_detected){const dt=(data.defer_suggestions||[]).map(t=>`<span class="defer-tag">${escapeHTML(t)}</span>`).join('');oa.innerHTML=`<div class="overload-banner" style="margin-bottom:16px"><div class="overload-title">Overload detected</div><div class="overload-msg">${escapeHTML(data.overload_message)}</div>${dt?`<div class="defer-tags">${dt}</div>`:''}</div>`;}
+  else oa.innerHTML='';
+  document.getElementById('stat-row').innerHTML=`<div class="stat"><div class="stat-label">Tasks analysed</div><div class="stat-val">${tasks.length}</div></div><div class="stat"><div class="stat-label">Hours available</div><div class="stat-val">${Number(hours)}</div></div><div class="stat"><div class="stat-label">Hours required</div><div class="stat-val${data.overload_detected?' overloaded':''}">${totalEffort}</div></div>`;
+  const ranked=document.getElementById('ranked-list');ranked.innerHTML='';
+  (data.ranked_tasks||[]).forEach((t,i)=>{const num=String(i+1).padStart(2,'0');const cat=safeCategory(t.category);ranked.innerHTML+=`<div class="rank-item"><div class="rank-num">${num}</div><div class="rank-content"><div class="rank-title-row"><span class="rank-title">${escapeHTML(t.title)}</span><span class="score-pill">Score ${Number(t.score)||0}</span><span class="cat-pill ${cat}">${escapeHTML(cat.replace(/_/g,' '))}</span></div><div class="rank-reason">${escapeHTML(t.reason)}</div></div></div>`;});
+  const plan=document.getElementById('action-plan');plan.innerHTML='';
+  (data.action_plan||[]).forEach(d=>{plan.innerHTML+=`<div class="plan-row"><div class="plan-day">${escapeHTML(d.day)}</div><div class="plan-tasks">${escapeHTML(Array.isArray(d.tasks)?d.tasks.join(', '):d.tasks)}</div></div>`;});
+  document.getElementById('explanation').textContent=data.explanation;
+  const la=document.getElementById('learning-area');
+  if(data.learning_insight){la.innerHTML=`<div class="learning-banner" style="margin-top:16px"><div class="learning-title">Adaptive insight</div><div class="learning-msg">${escapeHTML(data.learning_insight)}</div></div>`;}
+  else la.innerHTML='';
+  const sorted=[...tasks].sort((a,b)=>{const dp=due=>{if(!due||due==='No deadline'||due==='no deadline')return 999;const n=parseInt(due);return isNaN(n)?(due.toLowerCase().includes('tomorrow')?1:due.toLowerCase().includes('today')?0:5):n;};return dp(a.due_in_days)-dp(b.due_in_days);});
+  document.getElementById('compare-area').innerHTML=`<div class="panel" style="margin-top:16px"><div class="panel-header"><span class="panel-title">Why not just a to-do app?</span><span style="font-size:11px;color:#aaa;">Side-by-side comparison</span></div><div class="panel-body"><div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;"><div><div class="compare-col-header"><span class="compare-badge-gray">Standard to-do app</span><span style="font-size:11px;color:#bbb;">date sort only</span></div>${sorted.map((t,i)=>`<div class="compare-item"><span class="compare-num-gray">${String(i+1).padStart(2,'0')}</span><div class="compare-info"><div class="compare-title-gray">${escapeHTML(t.title)}</div><div class="compare-sub">Due: ${escapeHTML(t.due_in_days)} · ${Number(t.effort_hours)}hrs</div></div><span class="compare-tag-gray">date</span></div>`).join('')}<div class="verdict-red"><div class="verdict-red-title">What gets missed</div><div class="verdict-red-body">— Strategic tasks with no deadline are always last<br>— No awareness of effort vs available time<br>— Cannot explain why anything is ranked</div></div></div><div><div class="compare-col-header"><span class="compare-badge-blue">OrchestrAI engine</span><span style="font-size:11px;color:#bbb;">multi-factor reasoning</span></div>${(data.ranked_tasks||[]).map((t,i)=>`<div class="compare-item"><span class="compare-num-blue">${String(i+1).padStart(2,'0')}</span><div class="compare-info"><div class="compare-title-blue">${escapeHTML(t.title)}</div><div class="compare-sub">${escapeHTML(String(t.reason||'').substring(0,55))}...</div></div><span class="compare-tag-blue">${Number(t.score)||0}</span></div>`).join('')}<div class="verdict-green"><div class="verdict-green-title">What OrchestrAI adds</div><div class="verdict-green-body">— Protects strategic work from being deferred<br>— Detects overload and suggests what to defer<br>— Explains every decision in plain language</div></div></div></div></div></div>`;
+  document.getElementById('results').className='';
+}
+
+switchDomain('student');
+if(window.location.protocol==='file:'){
+  showError('OrchestrAI needs its Python service. Close this file and double-click “Start OrchestrAI.command” in the project folder.');
+  const runButton=document.getElementById('run-btn');
+  runButton.disabled=true;
+  runButton.title='Start the application through Start OrchestrAI.command';
+}
+</script>
+</body>
+</html>
