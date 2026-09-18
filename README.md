@@ -1,109 +1,148 @@
-# OrchestrAI
+<div align="center">
+  <img src="./logo.png" alt="OrchestrAI logo" width="230">
 
-**Explainable, scenario-aware workload planning powered by Gemini.**
+  <h1>OrchestrAI</h1>
 
-OrchestrAI converts a list of competing tasks and a fixed capacity into a ranked, explainable action plan. Instead of sorting only by deadline, it evaluates urgency, effort, importance, strategic value, flexibility and workload fit—then lets the user test what-if scenarios before committing to a plan.
+  <p><strong>Explainable AI workload planning for real-world constraints.</strong></p>
+  <p>Turn competing tasks, deadlines and limited capacity into a ranked, transparent action plan.</p>
 
-![OrchestrAI logo](logo.png)
+  <p>
+    <img alt="Python 3.11" src="https://img.shields.io/badge/Python-3.11-3776AB?style=for-the-badge&logo=python&logoColor=white">
+    <img alt="Flask" src="https://img.shields.io/badge/Flask-3.x-000000?style=for-the-badge&logo=flask&logoColor=white">
+    <img alt="Gemini" src="https://img.shields.io/badge/Gemini-Optional-8E75B2?style=for-the-badge&logo=googlegemini&logoColor=white">
+    <img alt="Docker" src="https://img.shields.io/badge/Docker-Ready-2496ED?style=for-the-badge&logo=docker&logoColor=white">
+  </p>
+  <p>
+    <img alt="Tests" src="https://img.shields.io/badge/tests-8%20passing-16A34A?style=flat-square">
+    <img alt="Demo mode" src="https://img.shields.io/badge/demo%20mode-no%20API%20key-3B5BDB?style=flat-square">
+    <img alt="Licence" src="https://img.shields.io/badge/licence-all%20rights%20reserved-6B7280?style=flat-square">
+  </p>
 
-## Why this project exists
+  <p>
+    <a href="#quick-start"><strong>Quick start</strong></a> ·
+    <a href="#how-it-works"><strong>Architecture</strong></a> ·
+    <a href="#api"><strong>API</strong></a> ·
+    <a href="#tests"><strong>Tests</strong></a>
+  </p>
+</div>
 
-Traditional to-do applications record decisions; they rarely help make them. OrchestrAI explores how a small, auditable AI pipeline can support prioritisation while keeping the final decision with the user.
+---
 
-The interface supports four example domains:
+## From task list to decision-ready plan
 
-- student workload;
-- hospital operations;
-- legal casework; and
-- software delivery.
+Traditional to-do applications record decisions; they rarely help make them. OrchestrAI evaluates each task across **urgency, effort, importance, strategic value, flexibility and workload fit**, then explains why the resulting plan makes sense.
 
-> OrchestrAI is a decision-support demonstration. It must not be used as the sole basis for medical, legal, employment or other high-impact decisions.
+> [!NOTE]
+> OrchestrAI works immediately in **local demo mode**, without an API key. Add Gemini when you want model-generated classification, explanations and richer what-if reasoning.
 
-## Core capabilities
+| Input | Reasoning pipeline | Output |
+|---|---|---|
+| Tasks, types and deadlines | Validate → classify → score → schedule → explain | Ranked priorities |
+| Estimated effort | Capacity and overload analysis | Day-by-day action plan |
+| Available hours | Six-factor scoring | Risks and defer suggestions |
+| Optional scenario | Scenario-aware replanning | Interactive analytics |
 
-- Multi-factor task ranking with plain-language explanations
-- Capacity-aware scheduling and overload detection
-- What-if scenario simulation
-- Domain-specific task categories
-- Readiness, risk, urgency/effort and capacity visualisations
-- A visible five-stage pipeline for ingestion, classification, scoring, scheduling and explanation
-- Strict input validation and normalisation of model-generated JSON
-- Prompt-injection boundaries for user-supplied task and scenario text
-- Responsive interface with accessible status and error feedback
+## Product experience
 
-## Architecture
+| 🎓 Student | 🏥 Hospital | ⚖️ Law firm | 💻 Software team |
+|---|---|---|---|
+| Assignments, exams and certifications | Critical care, procedures and compliance | Court deadlines, filings and research | Bugs, features, security and technical debt |
+
+The dashboard includes:
+
+- explainable priority scores for every task;
+- capacity-aware scheduling and overload detection;
+- what-if scenario simulation;
+- plan-readiness and risk summaries;
+- urgency-versus-effort, weekly-capacity and score-breakdown charts; and
+- a visible five-stage processing trace.
+
+## How it works
 
 ```mermaid
 flowchart LR
-    U[Task list + available hours] --> V[Input validation]
-    V --> I[Ingestion]
-    I --> C[Gemini classification]
-    C --> P[Gemini planning and scoring]
-    P --> N[Schema normalisation]
-    N --> S[Schedule + explanations]
-    S --> D[Interactive dashboard]
+    A[Task list<br/>and capacity] --> B[Validate input]
+    B --> C[Classify tasks]
+    C --> D[Score priorities]
+    D --> E[Build schedule]
+    E --> F[Normalise output]
+    F --> G[Explainable dashboard]
+    H[What-if scenario] --> D
+
+    classDef input fill:#eef3ff,stroke:#3b5bdb,color:#1e3a8a;
+    classDef process fill:#f8fafc,stroke:#64748b,color:#1f2937;
+    classDef output fill:#f0fdf4,stroke:#16a34a,color:#166534;
+    class A,H input;
+    class B,C,D,E,F process;
+    class G output;
 ```
 
-The displayed pipeline contains five logical stages. Classification and planning/scoring use Gemini; ingestion, validation, response normalisation and presentation are deterministic application stages.
+Classification and planning use Gemini when configured. Validation, response normalisation, the local demo engine and interface rendering are deterministic application stages.
+
+## Why it stands out
+
+- **Explainable by design** — each ranking includes a plain-language reason.
+- **Capacity aware** — the engine identifies when the requested workload cannot fit.
+- **Useful without credentials** — the transparent local engine supports immediate evaluation.
+- **Defensive LLM integration** — task text is treated as untrusted prompt data and model output is normalised.
+- **Multi-domain** — the same orchestration pattern adapts to four operational settings.
+- **Deployment ready** — includes Gunicorn, Docker health checks and a non-root container user.
 
 ## Technology
 
-- Python and Flask
-- Google Gen AI SDK with Gemini 2.5 Flash by default
-- Vanilla HTML, CSS and JavaScript
-- Chart.js
-- Gunicorn and Docker
+`Python` · `Flask` · `Google Gen AI SDK` · `Gemini 2.5 Flash` · `JavaScript` · `Chart.js` · `Gunicorn` · `Docker`
 
-## Run locally
+## Quick start
 
-### Fastest option on macOS
+### macOS — one click
 
-Double-click **`Start OrchestrAI.command`**. On first use it creates a local Python environment, installs the required packages, starts the service and opens the correct browser address.
+1. Download or clone this repository.
+2. Double-click **`Start OrchestrAI.command`**.
+3. Keep the Terminal window open while using the application.
 
-The application includes a transparent local demo engine, so it works without an API key. Configure Gemini only when you want model-generated classification, explanations and richer scenario reasoning.
+The launcher creates a virtual environment, installs dependencies, starts the service and opens <http://127.0.0.1:8080>.
 
-### 1. Create an environment
+### Manual setup
 
 ```bash
-python -m venv .venv
+git clone https://github.com/megh267/OrchestrAI.git
+cd OrchestrAI
+python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-```
-
-### 2. Configure Gemini (optional)
-
-```bash
-export GEMINI_API_KEY="your-key"
-```
-
-Use `.env.example` as a reference if your deployment platform supports environment files. The one-click launcher also loads a local `.env` file when present. Do not commit a real API key.
-
-Optionally choose a different compatible model:
-
-```bash
-export GEMINI_MODEL="gemini-2.5-flash"
-```
-
-### 3. Start the application
-
-```bash
 python main.py
 ```
 
-Open <http://localhost:8080>.
+Open <http://127.0.0.1:8080>.
+
+### Optional Gemini configuration
+
+```bash
+export GEMINI_API_KEY="your-key"
+export GEMINI_MODEL="gemini-2.5-flash"
+python main.py
+```
+
+You may instead create a local `.env` file from `.env.example`; the macOS launcher loads it automatically. Never commit a real API key.
 
 ## Run with Docker
 
 ```bash
 docker build -t orchestrai .
-docker run --rm -p 8080:8080 -e GEMINI_API_KEY="your-key" orchestrai
+docker run --rm -p 8080:8080 orchestrai
+```
+
+To enable Gemini:
+
+```bash
+docker run --rm -p 8080:8080 \
+  -e GEMINI_API_KEY="your-key" \
+  orchestrai
 ```
 
 ## API
 
 ### `POST /prioritise`
-
-Example request:
 
 ```json
 {
@@ -121,11 +160,11 @@ Example request:
 }
 ```
 
-The endpoint accepts 1–20 unique tasks. It returns validated rankings, an action plan, risk indicators, chart data and a pipeline trace.
+The endpoint accepts 1–20 uniquely named tasks and returns validated rankings, an action plan, risk indicators, chart data and a pipeline trace.
 
 ### `GET /health`
 
-Returns service status, configured model, pipeline-stage count and whether an API key is available. The key itself is never returned.
+Returns the service status, active mode, configured model and pipeline-stage count. API keys are never returned.
 
 ## Tests
 
@@ -133,27 +172,44 @@ Returns service status, configured model, pipeline-stage count and whether an AP
 python -m unittest discover -s tests -v
 ```
 
-The tests cover payload validation, API error behaviour, output normalisation, prompt-data boundaries and security headers without making live model calls.
+The eight tests cover input validation, demo mode, API failure behaviour, model-output normalisation and security headers without making live model calls.
 
-## Security and reliability choices
+## Security and reliability
 
-- The API key is read only from the server environment.
-- Same-origin requests are used; permissive cross-origin access is not enabled.
-- Input lengths, numeric ranges, supported domains and task counts are validated.
-- Task and scenario content is explicitly delimited as untrusted prompt data.
-- Only known task titles and domain categories survive model-output normalisation.
-- Dynamic content is escaped before being inserted into the interface.
-- Production responses include defensive browser headers.
+- API keys remain server-side and are excluded from Git.
+- Browser input is restricted by length, range, supported domain and task count.
+- User text is explicitly delimited as untrusted prompt data.
+- Unknown task titles and categories are removed from model responses.
+- Dynamic content is escaped before browser rendering.
+- Same-origin requests replace permissive cross-origin access.
+- Defensive browser headers are added to application responses.
 
-## Limitations and next steps
+> [!IMPORTANT]
+> OrchestrAI is a decision-support demonstration. It must not be the sole basis for medical, legal, employment or other high-impact decisions.
 
-- LLM rankings can still be incomplete or biased; they require human review.
-- The current prototype has no user accounts or persistent task storage.
-- Scheduling is generated in one planning pass rather than solved with a deterministic optimiser.
-- A future version could add structured model schemas, evaluation datasets, authentication, rate limiting and a constraint solver for schedule feasibility.
+## Project structure
 
-## Portfolio note
+```text
+OrchestrAI/
+├── main.py                    # API, validation and planning pipeline
+├── static/index.html          # Responsive dashboard
+├── tests/test_app.py          # Automated API and validation tests
+├── Start OrchestrAI.command   # One-click macOS launcher
+├── Dockerfile                 # Production container configuration
+└── requirements.txt           # Python dependencies
+```
 
-This repository demonstrates product thinking, LLM orchestration, defensive API design, data visualisation and deployment readiness. If you reuse the concept, please credit the project and its contributors.
+## Roadmap
 
-© 2026 OrchestrAI contributors. No open-source licence has been granted.
+- Structured model schemas and richer evaluation datasets
+- Authentication, persistence and user-specific planning history
+- Rate limiting and observability
+- Constraint-solver integration for schedule feasibility
+- Shareable plans and export to calendar
+
+---
+
+<div align="center">
+  <p>Designed and built as an AI engineering portfolio project.</p>
+  <p><strong>© 2026 OrchestrAI contributors · No open-source licence has been granted.</strong></p>
+</div>
